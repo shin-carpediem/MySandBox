@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MyArrayImprovedView: View {
     @State private var items: [MyDataItem] = [
-        MyDataItem(name: "りんご"),
+        MyDataItem(name: "りんご", fullName: .init(first: "りんご", last: "赤")),
         MyDataItem(name: "バナナ"),
         MyDataItem(name: "みかん")
     ]
@@ -18,6 +18,7 @@ struct MyArrayImprovedView: View {
             Button("最初の項目名を変更") {
                 if !items.isEmpty {
                     items[0].name = "新しいりんご" // これが後述のワナ！
+                    items[0].fullName?.first = "新しいりんごのフルネーム"
                 }
             }
         }

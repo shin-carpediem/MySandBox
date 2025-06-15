@@ -7,6 +7,8 @@ struct MyImprovedCustomItemView: View {
     var body: some View {
         HStack {
             Text(data.name)
+            Text(data.fullName?.first ?? "")
+            Text(data.fullName?.last ?? "")
             Spacer()
             Text("カウント: \(counter)")
             Button("+") {
