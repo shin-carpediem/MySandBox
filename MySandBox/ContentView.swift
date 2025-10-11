@@ -39,6 +39,16 @@ struct ContentView: View {
                 } label: {
                     Text("Move to MyArrayFixedView.")
                 }
+                NavigationLink {
+                    FormView(email: "email", password: "password")
+                } label: {
+                    Text("Move to FormView.")
+                }
+                NavigationLink {
+                    RichEditorView()
+                } label: {
+                    Text("Move to RichEditorView.")
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
