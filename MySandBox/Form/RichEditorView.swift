@@ -15,6 +15,7 @@ struct RichEditorView: View {
                     // Markdown Preview
                     ScrollView {
                         Markdown(text)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
                     }
                     .frame(minHeight: 200)
