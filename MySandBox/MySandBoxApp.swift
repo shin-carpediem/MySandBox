@@ -18,7 +18,8 @@ struct MySandBoxApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // ContentView()
+            RichEditorView()
         }
         .modelContainer(sharedModelContainer)
     }
