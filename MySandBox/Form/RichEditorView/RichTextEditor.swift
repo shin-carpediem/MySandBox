@@ -9,8 +9,8 @@ struct RichTextEditor: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
         textView.delegate = context.coordinator
-        textView.font = UIFont.systemFont(ofSize: 16)
-        textView.backgroundColor = UIColor.clear
+        textView.font = .systemFont(ofSize: 16)
+        textView.backgroundColor = .clear
         textView.textContainerInset = UIEdgeInsets(top: 12, left: 8, bottom: 12, right: 8)
         textView.isScrollEnabled = true
         textView.showsVerticalScrollIndicator = true
@@ -293,53 +293,51 @@ private extension RichTextEditor {
         stackView.spacing = 8
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
-        let headingButton = createHeadingDropdownButton(context: context)
-
         let boldButton = UIBarButtonItem(
-            image: UIImage(systemName: "bold")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "bold")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertBold)
         )
         let bulletListButton = UIBarButtonItem(
-            image: UIImage(systemName: "list.bullet")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "list.bullet")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertBulletList)
         )
         let numberedListButton = UIBarButtonItem(
-            image: UIImage(systemName: "list.number")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "list.number")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertNumberedList)
         )
         let linkButton = UIBarButtonItem(
-            image: UIImage(systemName: "link")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "link")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertLink)
         )
         let quoteButton = UIBarButtonItem(
-            image: UIImage(systemName: "quote.bubble")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "quote.bubble")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertQuote)
         )
         let codeBlockButton = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left.forwardslash.chevron.right")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "chevron.left.forwardslash.chevron.right")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertCodeBlock)
         )
         let strikethroughButton = UIBarButtonItem(
-            image: UIImage(systemName: "strikethrough")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            image: .init(systemName: "strikethrough")?.withTintColor(.black, renderingMode: .alwaysOriginal),
             style: .plain,
             target: context.coordinator,
             action: #selector(Coordinator.insertStrikethrough)
         )
 
         let buttons = [
-            headingButton,
+            headingDropdownButton(context: context),
             boldButton,
             strikethroughButton,
             bulletListButton,
@@ -381,7 +379,7 @@ private extension RichTextEditor {
         textView.inputAccessoryView = toolbar
     }
 
-    func createHeadingDropdownButton(context: Context) -> UIBarButtonItem {
+    func headingDropdownButton(context: Context) -> UIBarButtonItem {
         let button = UIButton(type: .system)
         button.setImage(.init(systemName: "textformat.size")?.withTintColor(.black, renderingMode: .alwaysOriginal), for: .normal)
         button.tintColor = .black
@@ -389,16 +387,16 @@ private extension RichTextEditor {
         button.widthAnchor.constraint(equalToConstant: 44).isActive = true
         button.heightAnchor.constraint(equalToConstant: 44).isActive = true
         button.menu = .init(title: "見出しを選択", children: [
-            UIAction(title: "見出し1", image: UIImage(systemName: "textformat.size")) { _ in
+            UIAction(title: "見出し1", image: .init(systemName: "textformat.size")) { _ in
                 context.coordinator.insertHeading1()
             },
-            UIAction(title: "見出し2", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+            UIAction(title: "見出し2", image: .init(systemName: "textformat.size.smaller")) { _ in
                 context.coordinator.insertHeading2()
             },
-            UIAction(title: "見出し3", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+            UIAction(title: "見出し3", image: .init(systemName: "textformat.size.smaller")) { _ in
                 context.coordinator.insertHeading3()
             },
-            UIAction(title: "見出し4", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+            UIAction(title: "見出し4", image: .init(systemName: "textformat.size.smaller")) { _ in
                 context.coordinator.insertHeading4()
             }
         ])
