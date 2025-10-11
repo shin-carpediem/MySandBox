@@ -38,6 +38,9 @@ struct RichTextEditor: UIViewRepresentable {
         textView.isScrollEnabled = true
         textView.showsVerticalScrollIndicator = true
         
+        // Set the textView reference immediately
+        context.coordinator.textView = textView
+        
         // Setup toolbar
         setupToolbar(for: textView, context: context)
         
@@ -48,6 +51,9 @@ struct RichTextEditor: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
+        // Update the textView reference
+        context.coordinator.textView = uiView
+        
         if uiView.text != text {
             uiView.text = text
         }
