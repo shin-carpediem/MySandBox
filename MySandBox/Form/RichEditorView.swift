@@ -156,34 +156,8 @@ struct RichTextEditor: UIViewRepresentable {
         stackView.spacing = 8
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Create toolbar items with SF Symbols
-        let heading1Button = UIBarButtonItem(
-            image: UIImage(systemName: "textformat.size")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertHeading1)
-        )
-        
-        let heading2Button = UIBarButtonItem(
-            image: UIImage(systemName: "textformat.size.smaller")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertHeading2)
-        )
-        
-        let heading3Button = UIBarButtonItem(
-            image: UIImage(systemName: "textformat.size.smaller")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertHeading3)
-        )
-        
-        let heading4Button = UIBarButtonItem(
-            image: UIImage(systemName: "textformat.size.smaller")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertHeading4)
-        )
+        // Create heading dropdown button
+        let headingButton = createHeadingDropdownButton(context: context)
         
         let boldButton = UIBarButtonItem(
             image: UIImage(systemName: "bold")?.withTintColor(.black, renderingMode: .alwaysOriginal),
@@ -237,7 +211,7 @@ struct RichTextEditor: UIViewRepresentable {
         
         // Add all buttons to stack view
         let buttons = [
-            heading1Button, heading2Button, heading3Button, heading4Button,
+            headingButton,
             boldButton, strikethroughButton,
             bulletListButton, numberedListButton,
             linkButton, quoteButton, codeBlockButton
@@ -278,6 +252,38 @@ struct RichTextEditor: UIViewRepresentable {
         toolbar.setItems([UIBarButtonItem(customView: scrollView)], animated: false)
         
         textView.inputAccessoryView = toolbar
+    }
+    
+    private func createHeadingDropdownButton(context: Context) -> UIBarButtonItem {
+        let button = UIButton(type: .system)
+        let image = UIImage(systemName: "textformat.size")?.withTintColor(.black, renderingMode: .alwaysOriginal)
+        button.setImage(image, for: .normal)
+        button.tintColor = .black
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        
+        
+        // Create menu directly on the button
+        let menu = UIMenu(title: "見出しを選択", children: [
+            UIAction(title: "見出し1", image: UIImage(systemName: "textformat.size")) { _ in
+                context.coordinator.insertHeading1()
+            },
+            UIAction(title: "見出し2", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+                context.coordinator.insertHeading2()
+            },
+            UIAction(title: "見出し3", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+                context.coordinator.insertHeading3()
+            },
+            UIAction(title: "見出し4", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+                context.coordinator.insertHeading4()
+            }
+        ])
+        
+        button.menu = menu
+        button.showsMenuAsPrimaryAction = true
+        
+        return UIBarButtonItem(customView: button)
     }
     
     
