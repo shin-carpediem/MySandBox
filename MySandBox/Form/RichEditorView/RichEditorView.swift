@@ -7,26 +7,20 @@ struct RichEditorView: View {
     @State private var showPreview = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                if showPreview {
-                    preview
-                } else {
-                    editor
-                }
-                VStack {
-                    HStack {
-                        Spacer()
-                        showPreviewIcon
-                    }
+        ZStack {
+            preview
+                .opacity(showPreview ? 1 : 0)
+            editor
+                .opacity(showPreview ? 0 : 1)
+            VStack {
+                HStack {
                     Spacer()
+                    showPreviewIcon
                 }
+                Spacer()
             }
-            Spacer()
         }
         .padding()
-        .navigationTitle("Rich Text Editor")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Private
