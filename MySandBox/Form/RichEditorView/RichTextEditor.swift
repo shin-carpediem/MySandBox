@@ -26,145 +26,9 @@ struct RichTextEditor: UIViewRepresentable {
         }
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
+    // MARK: - Coordinator
 
-    // MARK: - Private
-
-    private func setupToolbar(for textView: UITextView, context: Context) {
-        // Create a scroll view for the toolbar
-        let scrollView = UIScrollView()
-        scrollView.showsHorizontalScrollIndicator = true
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.backgroundColor = UIColor.systemGray6
-
-        // Create a stack view to hold all buttons
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fill
-        stackView.alignment = .center
-        stackView.spacing = 8
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-
-        // Create heading dropdown button
-        let headingButton = createHeadingDropdownButton(context: context)
-
-        let boldButton = UIBarButtonItem(
-            image: UIImage(systemName: "bold")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertBold)
-        )
-        let bulletListButton = UIBarButtonItem(
-            image: UIImage(systemName: "list.bullet")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertBulletList)
-        )
-        let numberedListButton = UIBarButtonItem(
-            image: UIImage(systemName: "list.number")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertNumberedList)
-        )
-        let linkButton = UIBarButtonItem(
-            image: UIImage(systemName: "link")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertLink)
-        )
-        let quoteButton = UIBarButtonItem(
-            image: UIImage(systemName: "quote.bubble")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertQuote)
-        )
-        let codeBlockButton = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left.forwardslash.chevron.right")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertCodeBlock)
-        )
-        let strikethroughButton = UIBarButtonItem(
-            image: UIImage(systemName: "strikethrough")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertStrikethrough)
-        )
-
-        let buttons = [
-            headingButton,
-            boldButton,
-            strikethroughButton,
-            bulletListButton,
-            numberedListButton,
-            linkButton,
-            quoteButton,
-            codeBlockButton
-        ]
-
-        for button in buttons {
-            if let customView = button.customView {
-                stackView.addArrangedSubview(customView)
-            } else {
-                let buttonView = UIButton(type: .system)
-                buttonView.setImage(button.image, for: .normal)
-                buttonView.tintColor = .black
-                buttonView.addTarget(button.target, action: button.action!, for: .touchUpInside)
-                buttonView.translatesAutoresizingMaskIntoConstraints = false
-                buttonView.widthAnchor.constraint(equalToConstant: 44).isActive = true
-                buttonView.heightAnchor.constraint(equalToConstant: 44).isActive = true
-                stackView.addArrangedSubview(buttonView)
-            }
-        }
-
-        scrollView.addSubview(stackView)
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
-            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 8),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -8),
-            stackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -16)
-        ])
-
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-        toolbar.setItems([UIBarButtonItem(customView: scrollView)], animated: false)
-
-        textView.inputAccessoryView = toolbar
-    }
-
-    private func createHeadingDropdownButton(context: Context) -> UIBarButtonItem {
-        let button = UIButton(type: .system)
-        let image = UIImage(systemName: "textformat.size")?.withTintColor(.black, renderingMode: .alwaysOriginal)
-        button.setImage(image, for: .normal)
-        button.tintColor = .black
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
-
-        let menu = UIMenu(title: "見出しを選択", children: [
-            UIAction(title: "見出し1", image: UIImage(systemName: "textformat.size")) { _ in
-                context.coordinator.insertHeading1()
-            },
-            UIAction(title: "見出し2", image: UIImage(systemName: "textformat.size.smaller")) { _ in
-                context.coordinator.insertHeading2()
-            },
-            UIAction(title: "見出し3", image: UIImage(systemName: "textformat.size.smaller")) { _ in
-                context.coordinator.insertHeading3()
-            },
-            UIAction(title: "見出し4", image: UIImage(systemName: "textformat.size.smaller")) { _ in
-                context.coordinator.insertHeading4()
-            }
-        ])
-
-        button.menu = menu
-        button.showsMenuAsPrimaryAction = true
-
-        return UIBarButtonItem(customView: button)
-    }
+    func makeCoordinator() -> Coordinator { .init(self) }
 
     class Coordinator: NSObject, UITextViewDelegate {
         var parent: RichTextEditor
@@ -173,6 +37,8 @@ struct RichTextEditor: UIViewRepresentable {
         init(_ parent: RichTextEditor) {
             self.parent = parent
         }
+
+        // MARK: UITextViewDelegate
 
         func textViewDidChange(_ textView: UITextView) {
             parent.text = textView.text
@@ -185,7 +51,7 @@ struct RichTextEditor: UIViewRepresentable {
             textView.selectedTextRange = textView.textRange(from: endPosition, to: endPosition)
         }
 
-        // MARK: - Markdown Insertion Methods
+        // MARK: Markdown Insertion Methods
 
         @objc func insertHeading1() {
             insertHeadingAtSelection("# ")
@@ -210,8 +76,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
         @objc func insertLink() {
             if let selectedText = getSelectedText(), !selectedText.isEmpty {
-                let linkMarkdown = "[\(selectedText)](url)"
-                replaceSelectedText(with: linkMarkdown)
+                replaceSelectedText(with: "[\(selectedText)](url)")
             } else {
                 insertMarkdownAtCursor("[リンクテキスト](url)")
             }
@@ -226,7 +91,7 @@ struct RichTextEditor: UIViewRepresentable {
             wrapSelectedText(with: "~~")
         }
 
-        // MARK: - Private
+        // MARK: Private
 
         private func insertHeadingAtSelection(_ heading: String) {
             guard let textView else { return }
@@ -357,7 +222,7 @@ struct RichTextEditor: UIViewRepresentable {
             textView.selectedRange = NSRange(location: newPosition, length: 0)
         }
 
-        private func wrapSelectedText(with prefix: String, suffix: String? = nil) {
+        private func wrapSelectedText(with prefix: String) {
             guard let textView else { return }
 
             let selectedRange = textView.selectedRange
@@ -366,7 +231,7 @@ struct RichTextEditor: UIViewRepresentable {
             if selectedRange.length > 0 {
                 // Text is selected, wrap it
                 let selectedText = (currentText as NSString).substring(with: selectedRange)
-                let suffix = suffix ?? prefix
+                let suffix = prefix
                 let wrappedText = "\(prefix)\(selectedText)\(suffix)"
 
                 let newText = (currentText as NSString).replacingCharacters(in: selectedRange, with: wrappedText)
@@ -378,7 +243,7 @@ struct RichTextEditor: UIViewRepresentable {
                 textView.selectedRange = newRange
             } else {
                 // No text selected, insert markdown at cursor
-                let suffix = suffix ?? prefix
+                let suffix = prefix
                 insertMarkdownAtCursor("\(prefix)\(suffix)")
 
                 // Position cursor between prefix and suffix
@@ -409,5 +274,135 @@ struct RichTextEditor: UIViewRepresentable {
             let newPosition = selectedRange.location + newText.count
             textView.selectedRange = NSRange(location: newPosition, length: 0)
         }
+    }
+}
+
+// MARK: - Private
+
+private extension RichTextEditor {
+    func setupToolbar(for textView: UITextView, context: Context) {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = true
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .systemGray6
+
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .fill
+        stackView.alignment = .center
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        let headingButton = createHeadingDropdownButton(context: context)
+
+        let boldButton = UIBarButtonItem(
+            image: UIImage(systemName: "bold")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertBold)
+        )
+        let bulletListButton = UIBarButtonItem(
+            image: UIImage(systemName: "list.bullet")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertBulletList)
+        )
+        let numberedListButton = UIBarButtonItem(
+            image: UIImage(systemName: "list.number")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertNumberedList)
+        )
+        let linkButton = UIBarButtonItem(
+            image: UIImage(systemName: "link")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertLink)
+        )
+        let quoteButton = UIBarButtonItem(
+            image: UIImage(systemName: "quote.bubble")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertQuote)
+        )
+        let codeBlockButton = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left.forwardslash.chevron.right")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertCodeBlock)
+        )
+        let strikethroughButton = UIBarButtonItem(
+            image: UIImage(systemName: "strikethrough")?.withTintColor(.black, renderingMode: .alwaysOriginal),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.insertStrikethrough)
+        )
+
+        let buttons = [
+            headingButton,
+            boldButton,
+            strikethroughButton,
+            bulletListButton,
+            numberedListButton,
+            linkButton,
+            quoteButton,
+            codeBlockButton
+        ]
+
+        buttons.forEach { button in
+            if let customView = button.customView {
+                stackView.addArrangedSubview(customView)
+            } else {
+                let buttonView = UIButton(type: .system)
+                buttonView.setImage(button.image, for: .normal)
+                buttonView.tintColor = .black
+                buttonView.addTarget(button.target, action: button.action!, for: .touchUpInside)
+                buttonView.translatesAutoresizingMaskIntoConstraints = false
+                buttonView.widthAnchor.constraint(equalToConstant: 44).isActive = true
+                buttonView.heightAnchor.constraint(equalToConstant: 44).isActive = true
+                stackView.addArrangedSubview(buttonView)
+            }
+        }
+
+        scrollView.addSubview(stackView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 8),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -8),
+            stackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -16)
+        ])
+
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        toolbar.setItems([.init(customView: scrollView)], animated: false)
+
+        textView.inputAccessoryView = toolbar
+    }
+
+    func createHeadingDropdownButton(context: Context) -> UIBarButtonItem {
+        let button = UIButton(type: .system)
+        button.setImage(.init(systemName: "textformat.size")?.withTintColor(.black, renderingMode: .alwaysOriginal), for: .normal)
+        button.tintColor = .black
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        button.menu = .init(title: "見出しを選択", children: [
+            UIAction(title: "見出し1", image: UIImage(systemName: "textformat.size")) { _ in
+                context.coordinator.insertHeading1()
+            },
+            UIAction(title: "見出し2", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+                context.coordinator.insertHeading2()
+            },
+            UIAction(title: "見出し3", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+                context.coordinator.insertHeading3()
+            },
+            UIAction(title: "見出し4", image: UIImage(systemName: "textformat.size.smaller")) { _ in
+                context.coordinator.insertHeading4()
+            }
+        ])
+        button.showsMenuAsPrimaryAction = true
+        return UIBarButtonItem(customView: button)
     }
 }
