@@ -125,9 +125,6 @@ struct RichTextEditor: UIViewRepresentable {
         // Setup toolbar
         setupToolbar(for: textView, context: context)
         
-        // Setup drag and drop
-        setupDragAndDrop(for: textView, context: context)
-        
         return textView
     }
     
@@ -237,19 +234,13 @@ struct RichTextEditor: UIViewRepresentable {
             action: #selector(Coordinator.insertStrikethrough)
         )
         
-        let imageButton = UIBarButtonItem(
-            image: UIImage(systemName: "photo")?.withTintColor(.black, renderingMode: .alwaysOriginal),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.insertImage)
-        )
         
         // Add all buttons to stack view
         let buttons = [
             heading1Button, heading2Button, heading3Button, heading4Button,
             boldButton, strikethroughButton,
             bulletListButton, numberedListButton,
-            linkButton, quoteButton, codeBlockButton, imageButton
+            linkButton, quoteButton, codeBlockButton
         ]
         
         for button in buttons {
@@ -289,13 +280,8 @@ struct RichTextEditor: UIViewRepresentable {
         textView.inputAccessoryView = toolbar
     }
     
-    private func setupDragAndDrop(for textView: UITextView, context: Context) {
-        textView.isUserInteractionEnabled = true
-        let dropInteraction = UIDropInteraction(delegate: context.coordinator)
-        textView.addInteraction(dropInteraction)
-    }
     
-    class Coordinator: NSObject, UITextViewDelegate, UIDropInteractionDelegate {
+    class Coordinator: NSObject, UITextViewDelegate {
         var parent: RichTextEditor
         weak var textView: UITextView?
         
@@ -365,9 +351,6 @@ struct RichTextEditor: UIViewRepresentable {
             wrapSelectedText(with: "~~")
         }
         
-        @objc func insertImage() {
-            insertMarkdownAtCursor("![画像の説明](画像URL)")
-        }
         
         // MARK: - Helper Methods
         
@@ -521,30 +504,6 @@ struct RichTextEditor: UIViewRepresentable {
             textView.selectedRange = NSRange(location: newPosition, length: 0)
         }
         
-        // MARK: - UIDropInteractionDelegate
-        
-        func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
-            return session.hasItemsConforming(toTypeIdentifiers: ["public.image"])
-        }
-        
-        func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
-            return UIDropProposal(operation: .copy)
-        }
-        
-        func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
-            session.loadObjects(ofClass: UIImage.self) { [weak self] images in
-                DispatchQueue.main.async {
-                    guard let self = self,
-                          self.textView != nil,
-                          (images.first as? UIImage) != nil else { return }
-
-                    // For now, we'll insert a placeholder for the image
-                    // In a real implementation, you'd upload the image and get a URL
-                    let imageMarkdown = "![画像](画像URL)"
-                    self.insertMarkdownAtCursor(imageMarkdown)
-                }
-            }
-        }
     }
 }
 
