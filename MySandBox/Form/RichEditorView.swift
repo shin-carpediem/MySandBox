@@ -58,8 +58,19 @@ struct RichTextEditor: UIViewRepresentable {
     }
     
     private func setupToolbar(for textView: UITextView, context: Context) {
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
+        // Create a scroll view for the toolbar
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = true
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = UIColor.systemGray6
+        
+        // Create a stack view to hold all buttons
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .fill
+        stackView.alignment = .center
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
         
         // Create toolbar items with SF Symbols
         let heading1Button = UIBarButtonItem(
@@ -146,27 +157,48 @@ struct RichTextEditor: UIViewRepresentable {
             action: #selector(Coordinator.insertImage)
         )
         
-        // Add flexible space and organize buttons
-        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        
-        toolbar.items = [
-            heading1Button,
-            heading2Button,
-            heading3Button,
-            heading4Button,
-            flexibleSpace,
-            boldButton,
-            strikethroughButton,
-            flexibleSpace,
-            bulletListButton,
-            numberedListButton,
-            flexibleSpace,
-            linkButton,
-            quoteButton,
-            codeBlockButton,
-            flexibleSpace,
-            imageButton
+        // Add all buttons to stack view
+        let buttons = [
+            heading1Button, heading2Button, heading3Button, heading4Button,
+            boldButton, strikethroughButton,
+            bulletListButton, numberedListButton,
+            linkButton, quoteButton, codeBlockButton, imageButton
         ]
+        
+        for button in buttons {
+            let buttonView = button.customView ?? UIButton(type: .system)
+            if let customView = button.customView {
+                stackView.addArrangedSubview(customView)
+            } else {
+                // Create a button view for the UIBarButtonItem
+                let buttonView = UIButton(type: .system)
+                buttonView.setImage(button.image, for: .normal)
+                buttonView.tintColor = .black
+                buttonView.addTarget(button.target, action: button.action!, for: .touchUpInside)
+                buttonView.translatesAutoresizingMaskIntoConstraints = false
+                buttonView.widthAnchor.constraint(equalToConstant: 44).isActive = true
+                buttonView.heightAnchor.constraint(equalToConstant: 44).isActive = true
+                stackView.addArrangedSubview(buttonView)
+            }
+        }
+        
+        // Add stack view to scroll view
+        scrollView.addSubview(stackView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Set up constraints
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 8),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -8),
+            stackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -16)
+        ])
+        
+        // Set up the toolbar container
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        toolbar.setItems([UIBarButtonItem(customView: scrollView)], animated: false)
         
         textView.inputAccessoryView = toolbar
     }
