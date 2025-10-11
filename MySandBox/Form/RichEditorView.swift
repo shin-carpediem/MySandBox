@@ -344,7 +344,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
         
         @objc func insertCodeBlock() {
-            wrapSelectedText(with: "```", suffix: "```")
+            insertCodeBlockAtSelection()
         }
         
         @objc func insertStrikethrough() {
@@ -433,6 +433,38 @@ struct RichTextEditor: UIViewRepresentable {
             } else {
                 // No text selected, insert quote prefix at cursor
                 insertMarkdownAtCursor(quotePrefix)
+            }
+        }
+        
+        private func insertCodeBlockAtSelection() {
+            guard let textView = textView else { return }
+            
+            let selectedRange = textView.selectedRange
+            let currentText = textView.text ?? ""
+            
+            if selectedRange.length > 0 {
+                // Text is selected, wrap with code block
+                let selectedText = (currentText as NSString).substring(with: selectedRange)
+                let codeBlockText = "```\n\(selectedText)\n```"
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: codeBlockText)
+                
+                textView.text = updatedText
+                parent.text = updatedText
+                
+                // Select the entire code block
+                let newRange = NSRange(location: selectedRange.location, length: codeBlockText.count)
+                textView.selectedRange = newRange
+            } else {
+                // No text selected, insert code block with cursor in the middle
+                let codeBlockText = "```\n\n```"
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: codeBlockText)
+                
+                textView.text = updatedText
+                parent.text = updatedText
+                
+                // Position cursor between the code block markers
+                let cursorPosition = selectedRange.location + 4 // After "```\n"
+                textView.selectedRange = NSRange(location: cursorPosition, length: 0)
             }
         }
         
