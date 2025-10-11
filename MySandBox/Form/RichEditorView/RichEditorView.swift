@@ -49,20 +49,16 @@ struct RichEditorView: View {
                                     // Hide keyboard when showing preview
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 } else {
-                                    // Show keyboard and focus at end when returning to editor
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                        // Focus the text view and move cursor to end
-                                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                           let window = windowScene.windows.first {
-                                            window.endEditing(false)
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                // Find the text view and make it first responder
-                                                if let textView = findTextView(in: window) {
-                                                    textView.becomeFirstResponder()
-                                                    // Move cursor to end
-                                                    let endPosition = textView.endOfDocument
-                                                    textView.selectedTextRange = textView.textRange(from: endPosition, to: endPosition)
-                                                }
+                                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                       let window = windowScene.windows.first {
+                                        window.endEditing(false)
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                            // Find the text view and make it first responder
+                                            if let textView = findTextView(in: window) {
+                                                textView.becomeFirstResponder()
+                                                // Move cursor to end
+                                                let endPosition = textView.endOfDocument
+                                                textView.selectedTextRange = textView.textRange(from: endPosition, to: endPosition)
                                             }
                                         }
                                     }
