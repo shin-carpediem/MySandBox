@@ -253,7 +253,6 @@ struct RichTextEditor: UIViewRepresentable {
         ]
         
         for button in buttons {
-            let buttonView = button.customView ?? UIButton(type: .system)
             if let customView = button.customView {
                 stackView.addArrangedSubview(customView)
             } else {
@@ -536,9 +535,9 @@ struct RichTextEditor: UIViewRepresentable {
             session.loadObjects(ofClass: UIImage.self) { [weak self] images in
                 DispatchQueue.main.async {
                     guard let self = self,
-                          let textView = self.textView,
-                          let image = images.first as? UIImage else { return }
-                    
+                          self.textView != nil,
+                          (images.first as? UIImage) != nil else { return }
+
                     // For now, we'll insert a placeholder for the image
                     // In a real implementation, you'd upload the image and get a URL
                     let imageMarkdown = "![画像](画像URL)"
