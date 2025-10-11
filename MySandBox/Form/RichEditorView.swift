@@ -231,19 +231,19 @@ struct RichTextEditor: UIViewRepresentable {
         // MARK: - Markdown Insertion Methods
         
         @objc func insertHeading1() {
-            insertMarkdownAtCursor("# ")
+            insertHeadingAtSelection("# ")
         }
         
         @objc func insertHeading2() {
-            insertMarkdownAtCursor("## ")
+            insertHeadingAtSelection("## ")
         }
         
         @objc func insertHeading3() {
-            insertMarkdownAtCursor("### ")
+            insertHeadingAtSelection("### ")
         }
         
         @objc func insertHeading4() {
-            insertMarkdownAtCursor("#### ")
+            insertHeadingAtSelection("#### ")
         }
         
         @objc func insertBold() {
@@ -251,11 +251,11 @@ struct RichTextEditor: UIViewRepresentable {
         }
         
         @objc func insertBulletList() {
-            insertMarkdownAtCursor("- ")
+            insertListAtSelection("- ")
         }
         
         @objc func insertNumberedList() {
-            insertMarkdownAtCursor("1. ")
+            insertListAtSelection("1. ")
         }
         
         @objc func insertLink() {
@@ -268,7 +268,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
         
         @objc func insertQuote() {
-            insertMarkdownAtCursor("> ")
+            insertQuoteAtSelection("> ")
         }
         
         @objc func insertCodeBlock() {
@@ -284,6 +284,88 @@ struct RichTextEditor: UIViewRepresentable {
         }
         
         // MARK: - Helper Methods
+        
+        private func insertHeadingAtSelection(_ heading: String) {
+            guard let textView = textView else { return }
+            
+            let selectedRange = textView.selectedRange
+            let currentText = textView.text ?? ""
+            
+            if selectedRange.length > 0 {
+                // Text is selected, add heading prefix
+                let selectedText = (currentText as NSString).substring(with: selectedRange)
+                let newText = "\(heading)\(selectedText)"
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+                
+                textView.text = updatedText
+                parent.text = updatedText
+                
+                // Select the entire heading text
+                let newRange = NSRange(location: selectedRange.location, length: newText.count)
+                textView.selectedRange = newRange
+            } else {
+                // No text selected, insert heading at cursor
+                insertMarkdownAtCursor(heading)
+            }
+        }
+        
+        private func insertListAtSelection(_ listPrefix: String) {
+            guard let textView = textView else { return }
+            
+            let selectedRange = textView.selectedRange
+            let currentText = textView.text ?? ""
+            
+            if selectedRange.length > 0 {
+                // Text is selected, convert to list
+                let selectedText = (currentText as NSString).substring(with: selectedRange)
+                let lines = selectedText.components(separatedBy: .newlines)
+                let listItems = lines.map { line in
+                    let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                    return trimmedLine.isEmpty ? "" : "\(listPrefix)\(trimmedLine)"
+                }
+                let newText = listItems.joined(separator: "\n")
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+                
+                textView.text = updatedText
+                parent.text = updatedText
+                
+                // Select the entire list
+                let newRange = NSRange(location: selectedRange.location, length: newText.count)
+                textView.selectedRange = newRange
+            } else {
+                // No text selected, insert list prefix at cursor
+                insertMarkdownAtCursor(listPrefix)
+            }
+        }
+        
+        private func insertQuoteAtSelection(_ quotePrefix: String) {
+            guard let textView = textView else { return }
+            
+            let selectedRange = textView.selectedRange
+            let currentText = textView.text ?? ""
+            
+            if selectedRange.length > 0 {
+                // Text is selected, convert to quote
+                let selectedText = (currentText as NSString).substring(with: selectedRange)
+                let lines = selectedText.components(separatedBy: .newlines)
+                let quoteLines = lines.map { line in
+                    let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                    return trimmedLine.isEmpty ? "" : "\(quotePrefix)\(trimmedLine)"
+                }
+                let newText = quoteLines.joined(separator: "\n")
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+                
+                textView.text = updatedText
+                parent.text = updatedText
+                
+                // Select the entire quote
+                let newRange = NSRange(location: selectedRange.location, length: newText.count)
+                textView.selectedRange = newRange
+            } else {
+                // No text selected, insert quote prefix at cursor
+                insertMarkdownAtCursor(quotePrefix)
+            }
+        }
         
         private func insertMarkdownAtCursor(_ markdown: String) {
             guard let textView = textView else { return }
