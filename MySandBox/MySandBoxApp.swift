@@ -1,10 +1,3 @@
-//
-//  MySandBoxApp.swift
-//  MySandBox
-//
-//  Created by 青木振一郎 on 2025/06/15.
-//
-
 import SwiftUI
 import SwiftData
 
