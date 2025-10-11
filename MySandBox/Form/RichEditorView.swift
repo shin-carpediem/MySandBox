@@ -1,22 +1,69 @@
 import SwiftUI
 import UIKit
+import MarkdownUI
 
 struct RichEditorView: View {
     @State private var text: String = ""
     @State private var showImagePicker = false
+    @State private var showPreview = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Text Editor
-            RichTextEditor(text: $text)
-                .frame(minHeight: 200)
-                .padding()
-                .background(Color(.systemBackground))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(.systemGray4), lineWidth: 1)
-                )
+            // Text Editor or Preview
+            ZStack {
+                if showPreview {
+                    // Markdown Preview
+                    ScrollView {
+                        Markdown(text)
+                            .padding()
+                    }
+                    .frame(minHeight: 200)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
+                } else {
+                    // Text Editor
+                    RichTextEditor(text: $text, showPreview: $showPreview)
+                        .frame(minHeight: 200)
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
+                        )
+                }
+                
+                // Preview Toggle Button
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showPreview.toggle()
+                                if showPreview {
+                                    // Hide keyboard when showing preview
+                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                }
+                            }
+                        }) {
+                            Image(systemName: showPreview ? "eye.slash" : "eye")
+                                .foregroundColor(.black)
+                                .font(.system(size: 16, weight: .medium))
+                                .frame(width: 32, height: 32)
+                                .background(Color(.systemGray6))
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        }
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                    }
+                    Spacer()
+                }
+            }
             
             Spacer()
         }
@@ -28,6 +75,7 @@ struct RichEditorView: View {
 
 struct RichTextEditor: UIViewRepresentable {
     @Binding var text: String
+    @Binding var showPreview: Bool
     
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
