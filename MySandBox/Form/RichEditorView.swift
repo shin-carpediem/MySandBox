@@ -47,6 +47,24 @@ struct RichEditorView: View {
                                 if showPreview {
                                     // Hide keyboard when showing preview
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                } else {
+                                    // Show keyboard and focus at end when returning to editor
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        // Focus the text view and move cursor to end
+                                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                           let window = windowScene.windows.first {
+                                            window.endEditing(false)
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                // Find the text view and make it first responder
+                                                if let textView = findTextView(in: window) {
+                                                    textView.becomeFirstResponder()
+                                                    // Move cursor to end
+                                                    let endPosition = textView.endOfDocument
+                                                    textView.selectedTextRange = textView.textRange(from: endPosition, to: endPosition)
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }) {
@@ -70,6 +88,20 @@ struct RichEditorView: View {
         .padding()
         .navigationTitle("Rich Text Editor")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func findTextView(in view: UIView) -> UITextView? {
+        if let textView = view as? UITextView {
+            return textView
+        }
+        
+        for subview in view.subviews {
+            if let textView = findTextView(in: subview) {
+                return textView
+            }
+        }
+        
+        return nil
     }
 }
 
@@ -274,6 +306,12 @@ struct RichTextEditor: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             parent.text = textView.text
             self.textView = textView
+        }
+        
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            // Ensure cursor is at the end when editing begins
+            let endPosition = textView.endOfDocument
+            textView.selectedTextRange = textView.textRange(from: endPosition, to: endPosition)
         }
         
         // MARK: - Markdown Insertion Methods
