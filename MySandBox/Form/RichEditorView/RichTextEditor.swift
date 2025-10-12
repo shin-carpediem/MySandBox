@@ -109,8 +109,7 @@ struct RichTextEditor: UIViewRepresentable {
                 parent.text = updatedText
 
                 // Select the entire heading text
-                let newRange = NSRange(location: selectedRange.location, length: newText.count)
-                textView.selectedRange = newRange
+                textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
             } else {
                 // No text selected, insert heading at cursor
                 insertMarkdownAtCursor(heading)
@@ -138,8 +137,7 @@ struct RichTextEditor: UIViewRepresentable {
                 parent.text = updatedText
 
                 // Select the entire list
-                let newRange = NSRange(location: selectedRange.location, length: newText.count)
-                textView.selectedRange = newRange
+                textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
             } else {
                 // No text selected, insert list prefix at cursor
                 insertMarkdownAtCursor(listPrefix)
@@ -167,8 +165,7 @@ struct RichTextEditor: UIViewRepresentable {
                 parent.text = updatedText
 
                 // Select the entire quote
-                let newRange = NSRange(location: selectedRange.location, length: newText.count)
-                textView.selectedRange = newRange
+                textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
             } else {
                 // No text selected, insert quote prefix at cursor
                 insertMarkdownAtCursor(quotePrefix)
@@ -191,8 +188,7 @@ struct RichTextEditor: UIViewRepresentable {
                 parent.text = updatedText
 
                 // Select the entire code block
-                let newRange = NSRange(location: selectedRange.location, length: codeBlockText.count)
-                textView.selectedRange = newRange
+                textView.selectedRange = .init(location: selectedRange.location, length: codeBlockText.count)
             } else {
                 // No text selected, insert code block with cursor in the middle
                 let codeBlockText = "```\n\n```"
@@ -203,7 +199,7 @@ struct RichTextEditor: UIViewRepresentable {
 
                 // Position cursor between the code block markers
                 let cursorPosition = selectedRange.location + 4 // After "```\n"
-                textView.selectedRange = NSRange(location: cursorPosition, length: 0)
+                textView.selectedRange = .init(location: cursorPosition, length: 0)
             }
         }
 
@@ -218,8 +214,7 @@ struct RichTextEditor: UIViewRepresentable {
             parent.text = newText
 
             // Update cursor position
-            let newPosition = selectedRange.location + markdown.count
-            textView.selectedRange = NSRange(location: newPosition, length: 0)
+            textView.selectedRange = .init(location: selectedRange.location + markdown.count, length: 0)
         }
 
         private func wrapSelectedText(with prefix: String) {
@@ -239,16 +234,14 @@ struct RichTextEditor: UIViewRepresentable {
                 parent.text = newText
 
                 // Update selection to include the wrapped text
-                let newRange = NSRange(location: selectedRange.location, length: wrappedText.count)
-                textView.selectedRange = newRange
+                textView.selectedRange = .init(location: selectedRange.location, length: wrappedText.count)
             } else {
                 // No text selected, insert markdown at cursor
                 let suffix = prefix
                 insertMarkdownAtCursor("\(prefix)\(suffix)")
 
                 // Position cursor between prefix and suffix
-                let newPosition = selectedRange.location + prefix.count
-                textView.selectedRange = NSRange(location: newPosition, length: 0)
+                textView.selectedRange = .init(location: selectedRange.location + prefix.count, length: 0)
             }
         }
 
@@ -271,8 +264,7 @@ struct RichTextEditor: UIViewRepresentable {
             parent.text = newText
 
             // Update cursor position
-            let newPosition = selectedRange.location + newText.count
-            textView.selectedRange = NSRange(location: newPosition, length: 0)
+            textView.selectedRange = .init(location: selectedRange.location + newText.count, length: 0)
         }
     }
 }
