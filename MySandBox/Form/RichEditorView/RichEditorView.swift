@@ -53,7 +53,8 @@ struct RichEditorView: View {
         ScrollView {
             Markdown(text)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+                .padding(.vertical, 32)
+                .padding(.horizontal, 26)
         }
         .frame(minHeight: 200)
         .background(Color(.systemBackground))
