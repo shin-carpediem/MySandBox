@@ -116,7 +116,7 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     private func insertHeadingAtSelection(_ heading: String) {
         guard let textView else { return }
 
-        let selectedRange = textView.selectedRange
+        let selectedRange = effectiveRange()
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
@@ -145,7 +145,7 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     private func insertListAtSelection(_ listPrefix: String) {
         guard let textView else { return }
 
-        let selectedRange = textView.selectedRange
+        let selectedRange = effectiveRange()
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
@@ -183,7 +183,7 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     private func insertQuoteAtSelection(_ quotePrefix: String) {
         guard let textView else { return }
 
-        let selectedRange = textView.selectedRange
+        let selectedRange = effectiveRange()
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
@@ -221,7 +221,7 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     private func insertCodeBlockAtSelection() {
         guard let textView else { return }
 
-        let selectedRange = textView.selectedRange
+        let selectedRange = effectiveRange()
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
@@ -256,7 +256,7 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     private func insertMarkdownAtCursor(_ markdown: String) {
         guard let textView else { return }
 
-        let selectedRange = textView.selectedRange
+        let selectedRange = effectiveRange()
         let currentText = textView.text ?? ""
         let newText = (currentText as NSString).replacingCharacters(in: selectedRange, with: markdown)
 
@@ -270,7 +270,7 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     private func wrapSelectedText(with prefix: String) {
         guard let textView else { return }
 
-        let selectedRange = textView.selectedRange
+        let selectedRange = effectiveRange()
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
@@ -297,6 +297,16 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
             // Position cursor between prefix and suffix
             textView.selectedRange = .init(location: selectedRange.location + prefix.count, length: 0)
         }
+    }
+
+    private func effectiveRange() -> NSRange {
+        guard let textView else { return NSRange(location: 0, length: 0) }
+        if let markedTextRange = textView.markedTextRange, !markedTextRange.isEmpty {
+            let location = textView.offset(from: textView.beginningOfDocument, to: markedTextRange.start)
+            let length = textView.offset(from: markedTextRange.start, to: markedTextRange.end)
+            return NSRange(location: location, length: length)
+        }
+        return textView.selectedRange
     }
 
     private func getSelectedText() -> String? {
