@@ -4,6 +4,10 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     var parent: RichTextEditor
     weak var textView: UITextView?
 
+    private var lastAction: String?
+    private var preActionSnapshot: (text: String, selectedRange: NSRange)?
+    private var isProgrammaticChange = false
+
     init(_ parent: RichTextEditor) {
         self.parent = parent
     }
@@ -13,6 +17,10 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         parent.text = textView.text
         self.textView = textView
+        if !isProgrammaticChange {
+            lastAction = nil
+            preActionSnapshot = nil
+        }
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
@@ -24,51 +32,83 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
     // MARK: - Markdown Insertion
 
     @objc func insertHeading1() {
-        insertHeadingAtSelection("# ")
+        performAction("heading1") { self.insertHeadingAtSelection("# ") }
     }
 
     @objc func insertHeading2() {
-        insertHeadingAtSelection("## ")
+        performAction("heading2") { self.insertHeadingAtSelection("## ") }
     }
 
     @objc func insertHeading3() {
-        insertHeadingAtSelection("### ")
+        performAction("heading3") { self.insertHeadingAtSelection("### ") }
     }
 
     @objc func insertHeading4() {
-        insertHeadingAtSelection("#### ")
+        performAction("heading4") { self.insertHeadingAtSelection("#### ") }
     }
 
     @objc func insertBold() {
-        wrapSelectedText(with: "**")
+        performAction("bold") { self.wrapSelectedText(with: "**") }
     }
 
     @objc func insertBulletList() {
-        insertListAtSelection("- ")
+        performAction("bulletList") { self.insertListAtSelection("- ") }
     }
 
     @objc func insertNumberedList() {
-        insertListAtSelection("1. ")
+        performAction("numberedList") { self.insertListAtSelection("1. ") }
     }
 
     @objc func insertLink() {
-        if let selectedText = getSelectedText(), !selectedText.isEmpty {
-            replaceSelectedText(with: "[\(selectedText)](url)")
-        } else {
-            insertMarkdownAtCursor("[リンクテキスト](url)")
+        performAction("link") {
+            if let selectedText = self.getSelectedText(), !selectedText.isEmpty {
+                self.replaceSelectedText(with: "[\(selectedText)](url)")
+            } else {
+                self.insertMarkdownAtCursor("[リンクテキスト](url)")
+            }
         }
     }
 
     @objc func insertQuote() {
-        insertQuoteAtSelection("> ")
+        performAction("quote") { self.insertQuoteAtSelection("> ") }
     }
 
     @objc func insertCodeBlock() {
-        insertCodeBlockAtSelection()
+        performAction("codeBlock") { self.insertCodeBlockAtSelection() }
     }
 
     @objc func insertStrikethrough() {
-        wrapSelectedText(with: "~~")
+        performAction("strikethrough") { self.wrapSelectedText(with: "~~") }
+    }
+
+    // MARK: - Action State Management
+
+    private func performAction(_ actionId: String, _ action: () -> Void) {
+        if tryUndoLastAction(actionId: actionId) { return }
+        saveActionState(actionId: actionId)
+        isProgrammaticChange = true
+        action()
+        isProgrammaticChange = false
+    }
+
+    private func tryUndoLastAction(actionId: String) -> Bool {
+        guard lastAction == actionId, let snapshot = preActionSnapshot, let textView else {
+            return false
+        }
+        isProgrammaticChange = true
+        textView.text = snapshot.text
+        parent.text = snapshot.text
+        textView.selectedRange = snapshot.selectedRange
+        isProgrammaticChange = false
+        lastAction = nil
+        preActionSnapshot = nil
+        return true
+    }
+
+    private func saveActionState(actionId: String) {
+        guard let textView else { return }
+        preActionSnapshot = (textView.text ?? "", textView.selectedRange)
+        lastAction = actionId
     }
 
     // MARK: - Private
@@ -80,16 +120,22 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
-            // Text is selected, add heading prefix
             let selectedText = (currentText as NSString).substring(with: selectedRange)
-            let newText = "\(heading)\(selectedText)"
-            let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
-
-            textView.text = updatedText
-            parent.text = updatedText
-
-            // Select the entire heading text
-            textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
+            if selectedText.hasPrefix(heading) {
+                // Already has this heading → remove it
+                let stripped = String(selectedText.dropFirst(heading.count))
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: stripped)
+                textView.text = updatedText
+                parent.text = updatedText
+                textView.selectedRange = .init(location: selectedRange.location, length: stripped.count)
+            } else {
+                // Add heading prefix
+                let newText = "\(heading)\(selectedText)"
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+                textView.text = updatedText
+                parent.text = updatedText
+                textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
+            }
         } else {
             // No text selected, insert heading at cursor
             insertMarkdownAtCursor(heading)
@@ -103,20 +149,30 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
-            // Text is selected, convert to list
             let selectedText = (currentText as NSString).substring(with: selectedRange)
             let lines = selectedText.components(separatedBy: .newlines)
-            let listItems = lines.map { line in
-                let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-                return trimmedLine.isEmpty ? "" : "\(listPrefix)\(trimmedLine)"
-            }
-            let newText = listItems.joined(separator: "\n")
-            let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+            let nonEmptyLines = lines.filter { !$0.isEmpty }
+            let allPrefixed = !nonEmptyLines.isEmpty && nonEmptyLines.allSatisfy { $0.hasPrefix(listPrefix) }
 
+            let newText: String
+            if allPrefixed {
+                // Remove list prefix from all lines
+                let unformatted = lines.map { line -> String in
+                    line.hasPrefix(listPrefix) ? String(line.dropFirst(listPrefix.count)) : line
+                }
+                newText = unformatted.joined(separator: "\n")
+            } else {
+                // Add list prefix to non-empty lines
+                let listItems = lines.map { line -> String in
+                    let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                    return trimmedLine.isEmpty ? "" : "\(listPrefix)\(trimmedLine)"
+                }
+                newText = listItems.joined(separator: "\n")
+            }
+
+            let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
             textView.text = updatedText
             parent.text = updatedText
-
-            // Select the entire list
             textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
         } else {
             // No text selected, insert list prefix at cursor
@@ -131,20 +187,30 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
-            // Text is selected, convert to quote
             let selectedText = (currentText as NSString).substring(with: selectedRange)
             let lines = selectedText.components(separatedBy: .newlines)
-            let quoteLines = lines.map { line in
-                let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-                return trimmedLine.isEmpty ? "" : "\(quotePrefix)\(trimmedLine)"
-            }
-            let newText = quoteLines.joined(separator: "\n")
-            let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+            let nonEmptyLines = lines.filter { !$0.isEmpty }
+            let allPrefixed = !nonEmptyLines.isEmpty && nonEmptyLines.allSatisfy { $0.hasPrefix(quotePrefix) }
 
+            let newText: String
+            if allPrefixed {
+                // Remove quote prefix from all lines
+                let unformatted = lines.map { line -> String in
+                    line.hasPrefix(quotePrefix) ? String(line.dropFirst(quotePrefix.count)) : line
+                }
+                newText = unformatted.joined(separator: "\n")
+            } else {
+                // Add quote prefix to non-empty lines
+                let quoteLines = lines.map { line -> String in
+                    let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                    return trimmedLine.isEmpty ? "" : "\(quotePrefix)\(trimmedLine)"
+                }
+                newText = quoteLines.joined(separator: "\n")
+            }
+
+            let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
             textView.text = updatedText
             parent.text = updatedText
-
-            // Select the entire quote
             textView.selectedRange = .init(location: selectedRange.location, length: newText.count)
         } else {
             // No text selected, insert quote prefix at cursor
@@ -159,24 +225,28 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
-            // Text is selected, wrap with code block
             let selectedText = (currentText as NSString).substring(with: selectedRange)
-            let codeBlockText = "```\n\(selectedText)\n```"
-            let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: codeBlockText)
-
-            textView.text = updatedText
-            parent.text = updatedText
-
-            // Select the entire code block
-            textView.selectedRange = .init(location: selectedRange.location, length: codeBlockText.count)
+            if selectedText.hasPrefix("```\n") && selectedText.hasSuffix("\n```") {
+                // Already wrapped → unwrap
+                let inner = String(selectedText.dropFirst(4).dropLast(4))
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: inner)
+                textView.text = updatedText
+                parent.text = updatedText
+                textView.selectedRange = .init(location: selectedRange.location, length: inner.count)
+            } else {
+                // Wrap with code block
+                let codeBlockText = "```\n\(selectedText)\n```"
+                let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: codeBlockText)
+                textView.text = updatedText
+                parent.text = updatedText
+                textView.selectedRange = .init(location: selectedRange.location, length: codeBlockText.count)
+            }
         } else {
             // No text selected, insert code block with cursor in the middle
             let codeBlockText = "```\n\n```"
             let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: codeBlockText)
-
             textView.text = updatedText
             parent.text = updatedText
-
             // Position cursor between the code block markers
             let cursorPosition = selectedRange.location + 4 // After "```\n"
             textView.selectedRange = .init(location: cursorPosition, length: 0)
@@ -204,22 +274,26 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
         let currentText = textView.text ?? ""
 
         if selectedRange.length > 0 {
-            // Text is selected, wrap it
             let selectedText = (currentText as NSString).substring(with: selectedRange)
-            let suffix = prefix
-            let wrappedText = "\(prefix)\(selectedText)\(suffix)"
-
-            let newText = (currentText as NSString).replacingCharacters(in: selectedRange, with: wrappedText)
-            textView.text = newText
-            parent.text = newText
-
-            // Update selection to include the wrapped text
-            textView.selectedRange = .init(location: selectedRange.location, length: wrappedText.count)
+            if selectedText.hasPrefix(prefix) && selectedText.hasSuffix(prefix)
+                && selectedText.count > prefix.count * 2 {
+                // Already wrapped → unwrap
+                let inner = String(selectedText.dropFirst(prefix.count).dropLast(prefix.count))
+                let newText = (currentText as NSString).replacingCharacters(in: selectedRange, with: inner)
+                textView.text = newText
+                parent.text = newText
+                textView.selectedRange = .init(location: selectedRange.location, length: inner.count)
+            } else {
+                // Wrap the selected text
+                let wrappedText = "\(prefix)\(selectedText)\(prefix)"
+                let newText = (currentText as NSString).replacingCharacters(in: selectedRange, with: wrappedText)
+                textView.text = newText
+                parent.text = newText
+                textView.selectedRange = .init(location: selectedRange.location, length: wrappedText.count)
+            }
         } else {
             // No text selected, insert markdown at cursor
-            let suffix = prefix
-            insertMarkdownAtCursor("\(prefix)\(suffix)")
-
+            insertMarkdownAtCursor("\(prefix)\(prefix)")
             // Position cursor between prefix and suffix
             textView.selectedRange = .init(location: selectedRange.location + prefix.count, length: 0)
         }
@@ -238,10 +312,10 @@ final class RichTextEditorCoordinator: NSObject, UITextViewDelegate {
         guard let textView else { return }
         let selectedRange = textView.selectedRange
         let currentText = textView.text ?? ""
-        let newText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
+        let updatedText = (currentText as NSString).replacingCharacters(in: selectedRange, with: newText)
 
-        textView.text = newText
-        parent.text = newText
+        textView.text = updatedText
+        parent.text = updatedText
 
         // Update cursor position
         textView.selectedRange = .init(location: selectedRange.location + newText.count, length: 0)
