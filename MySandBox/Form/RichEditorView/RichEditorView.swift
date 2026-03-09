@@ -87,12 +87,13 @@ struct RichEditorView: View {
                 }
             }
         }) {
-            Image(systemName: showPreview ? "eye.slash" : "eye")
-                .foregroundColor(.black)
-                .font(.system(size: 16, weight: .medium))
-                .frame(width: 32, height: 32)
+            Text(showPreview ? "プレビュー中" : "プレビュー")
+                .foregroundColor(showPreview ? .accentColor : .secondary)
+                .font(.system(size: 13, weight: .medium))
+                .padding(.horizontal, 10)
+                .frame(height: 32)
                 .background(Color(.systemGray6))
-                .clipShape(Circle())
+                .clipShape(Capsule())
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
         }
         .padding(.top, 8)
